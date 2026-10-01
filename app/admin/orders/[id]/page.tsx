@@ -27,7 +27,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
     supabase.from('order_notes').select('*, profiles:created_by(full_name)').eq('order_id', id).order('created_at', { ascending: false }),
     supabase.from('cod_call_logs').select('*').eq('order_id', id).order('created_at', { ascending: false }),
     supabase.from('admin_stock_warnings').select('shortages').eq('order_id', id).maybeSingle(),
-    o.user_id ? supabase.from('profiles').select('id, full_name, email, phone, failed_cod_count').eq('id', o.user_id).maybeSingle() : Promise.resolve({ data: null }),
+    o.user_id ? supabase.from('profiles').select('id, full_name, email, phone, failed_cod_count, is_anonymous').eq('id', o.user_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
 
   return (
@@ -53,8 +53,10 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
             <Card title="Customer">
               {profile.data ? (
                 <div className="text-sm">
-                  <Link href={`/admin/customers/${profile.data.id}`} className="font-medium">{profile.data.full_name ?? 'Customer'}</Link>
-                  <p>{profile.data.email}</p><p>{profile.data.phone}</p>
+                  {profile.data.is_anonymous
+                    ? <p className="font-medium">{o.shipping_name ?? 'Guest'} <span className="text-xs text-brand-muted">(guest checkout)</span></p>
+                    : <Link href={`/admin/customers/${profile.data.id}`} className="font-medium">{profile.data.full_name ?? 'Customer'}</Link>}
+                  <p>{o.customer_email}</p><p>{profile.data.phone}</p>
                   {profile.data.failed_cod_count > 0 ? <p className="mt-1 text-state-error">Refused COD parcels: {profile.data.failed_cod_count}</p> : null}
                 </div>
               ) : <p className="text-sm text-brand-muted">Deleted account</p>}

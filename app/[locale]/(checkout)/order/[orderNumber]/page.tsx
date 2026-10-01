@@ -24,7 +24,8 @@ export default async function OrderReceivedPage({ params }: Props) {
   const { orderNumber } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.is_anonymous) return redirect({ href: `/login?next=/order/${orderNumber}`, locale });
+  // Guests see their order in the same browser session they placed it from
+  if (!user) return redirect({ href: `/login?next=/order/${orderNumber}`, locale });
   const { data: order } = await supabase.from('orders').select('*').eq('order_number', orderNumber).maybeSingle();
   if (!order) notFound();
   const o = order as Order;
@@ -37,6 +38,7 @@ export default async function OrderReceivedPage({ params }: Props) {
   const pickup = o.shipping_line1 === 'Collect from the boutique';
   const firstName = (o.shipping_name ?? '').split(' ')[0];
   const b = (c: React.ReactNode) => <b>{c}</b>;
+  const email = user.email || o.guest_email;
 
   return (
     <section className="co__done" tabIndex={-1}>
@@ -44,7 +46,8 @@ export default async function OrderReceivedPage({ params }: Props) {
         <span className="co__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg></span>
         <p className="eyebrow">{t('checkout.receivedEyebrow')}</p>
         <h1 className="section__title">{firstName ? <Title text={t('checkout.thanksName', { name: firstName })} /> : t('checkout.thanks')}</h1>
-        <p>{user.email ? t.rich('checkout.receivedEmail', { number: o.order_number, email: user.email, b }) : t.rich('checkout.received', { number: o.order_number, b })}</p>
+        <p>{email ? t.rich('checkout.receivedEmail', { number: o.order_number, email, b }) : t.rich('checkout.received', { number: o.order_number, b })}</p>
+        {user.is_anonymous && o.guest_email ? <p className="ac__small">{t.rich('checkout.guestAccountNote', { email: o.guest_email, b })}</p> : null}
 
         {o.payment_method === 'bank_transfer'
           ? (o.status === 'on_hold' && due > 0
@@ -72,7 +75,9 @@ export default async function OrderReceivedPage({ params }: Props) {
         </div>
 
         <div className="co__done-cta">
-          <Link href={`/account/orders/${o.order_number}`} className="btn btn--gold">{t('checkout.viewYourOrder')}</Link>
+          {user.is_anonymous
+            ? <Link href={`/register?next=${encodeURIComponent(`/account/orders/${o.order_number}`)}`} className="btn btn--gold">{t('checkout.createAccount')}</Link>
+            : <Link href={`/account/orders/${o.order_number}`} className="btn btn--gold">{t('checkout.viewYourOrder')}</Link>}
           <Link href="/shop" className="btn btn--ghost">{t('common.continueShopping')}</Link>
         </div>
       </div>

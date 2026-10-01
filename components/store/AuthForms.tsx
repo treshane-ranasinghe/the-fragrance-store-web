@@ -90,6 +90,7 @@ export function LoginForm({ next, linkError = false, googleError = false, google
       <p className="ac__small"><Link href="/forgot-password" className="co__link">{t('forgot')}</Link> {t('resetHint')}</p>
       <hr className="ac__rule" />
       <p className="ac__small">{t('newHere')} <Link href={`/register${next !== '/account' ? `?next=${encodeURIComponent(next)}` : ''}`} className="co__link">{t('create')}</Link></p>
+      {next.startsWith('/checkout') ? <p className="ac__small"><Link href="/checkout" className="co__link">{t('continueGuest')}</Link></p> : null}
     </form>
     </>
   );

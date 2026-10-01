@@ -51,7 +51,9 @@ const btn = (href: string, text: string) => `<p style="margin:24px 0"><a href="$
 export function renderEmail(j: Job, c: Ctx): { subject: string; html: string } | null {
   const o = j.order;
   const hi = `<p>Hi ${esc(j.customer_name || 'there')},</p>`;
-  const link = btn(`${SITE_URL}/account/orders/${o.order_number}`, 'View your order');
+  // Guest orders have no account page; the order page works in the browser they ordered from (or once they sign up)
+  const guest = Boolean(o.guest_email);
+  const link = btn(`${SITE_URL}${guest ? '/order' : '/account/orders'}/${o.order_number}`, 'View your order');
   const cash = formatRs(Number(o.total) - Number(o.amount_received));
   switch (j.template) {
     case 'order_on_hold':
@@ -71,7 +73,7 @@ export function renderEmail(j: Job, c: Ctx): { subject: string; html: string } |
     case 'order_shipped':
       return { subject: `Your order ${o.order_number} is on the way`, html: layout('Your order is on the way', `${hi}<p>Your order has been handed to <strong>${esc(o.courier_name)}</strong>${o.tracking_number ? ` — tracking number <strong>${esc(o.tracking_number)}</strong>` : ''}.</p>${o.payment_method === 'cod' ? `<p style="background:#F5F0E6;border-left:3px solid #C6A566;padding:12px">Please pay <strong>${formatRs(o.cod_amount_to_collect as number)}</strong> in cash to the courier.</p>` : ''}${link}`) };
     case 'order_completed':
-      return { subject: `Order ${o.order_number} completed`, html: layout('Thank you!', `${hi}<p>Your payment has been received and your order is complete. We hope you love your new fragrance.</p>${btn(`${SITE_URL}/account/purchases`, 'Buy again')}`) };
+      return { subject: `Order ${o.order_number} completed`, html: layout('Thank you!', `${hi}<p>Your payment has been received and your order is complete. We hope you love your new fragrance.</p>${btn(`${SITE_URL}${guest ? '/shop' : '/account/purchases'}`, 'Buy again')}`) };
     case 'order_cancelled':
       return { subject: `Order ${o.order_number} cancelled`, html: layout('Your order was cancelled', `${hi}<p>Order <strong>${esc(o.order_number)}</strong> has been cancelled${j.payload.reason ? `: ${esc(j.payload.reason)}` : ''}.</p>${Number(o.amount_received) > 0 ? '<p>We will refund the amount you paid to your bank account and let you know once it is done.</p>' : ''}<p>The items are back in your cart if you'd like to order again.</p>${btn(`${SITE_URL}/cart`, 'Go to cart')}`) };
     default:

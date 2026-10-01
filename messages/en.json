@@ -526,7 +526,13 @@
     "collection": "Collection",
     "deliveringTo": "Delivering to",
     "collectBoutique": "Collect from the boutique",
-    "viewYourOrder": "View your order"
+    "viewYourOrder": "View your order",
+    "email": "Email",
+    "emailHint": "Your order confirmation and updates are sent here.",
+    "errEmail": "Enter a valid email address.",
+    "guestSignIn": "Checking out as a guest. Have an account? <link>Sign in</link>",
+    "createAccount": "Create an account",
+    "guestAccountNote": "Create an account with <b>{email}</b> to track this order and check out faster next time."
   },
   "districts": {
     "Ampara": "Ampara",
@@ -561,7 +567,7 @@
     "signUp": "Sign up",
     "demo": "Demo mode: the store is running on sample data. Signing in, My Account and Admin need a Supabase project.",
     "welcome": "Welcome *back*",
-    "leadCheckout": "Sign in to place your order — your bag is kept.",
+    "leadCheckout": "Sign in to place your order — your bag is kept. Or continue as a guest.",
     "lead": "Sign in to see your orders and check out faster.",
     "email": "Email",
     "password": "Password",
@@ -595,7 +601,8 @@
     "google": "Continue with Google",
     "googleRedirecting": "Opening Google…",
     "or": "or",
-    "googleError": "Google sign-in didn't complete. Please try again, or use your email and password."
+    "googleError": "Google sign-in didn't complete. Please try again, or use your email and password.",
+    "continueGuest": "Continue as guest"
   },
   "account": {
     "eyebrow": "My Account",
@@ -756,6 +763,8 @@
     "giveReason": "Please give a reason for cancelling",
     "cannotCancel": "This order can no longer be cancelled online. Please contact us.",
     "shippedCannotCancel": "Orders that have been shipped cannot be cancelled. Mark the delivery as failed instead.",
-    "orderNotFound": "Order not found"
+    "orderNotFound": "Order not found",
+    "validEmail": "Please enter a valid email address",
+    "codPhone": "Cash on Delivery isn't available for this mobile number. Please pay by bank transfer."
   }
 }

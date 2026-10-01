@@ -22,7 +22,7 @@ interface Options {
   cod: { enabled: boolean; title: string; description: string; reason: string | null };
 }
 type PaymentText = { bank: { title: string; description: string }; cod: { title: string; description: string } };
-type Fields = { full_name: string; phone: string; line1: string; line2: string; city: string; district: string; postal_code: string; note: string };
+type Fields = { email: string; full_name: string; phone: string; line1: string; line2: string; city: string; district: string; postal_code: string; note: string };
 
 function Field({ k, label, full, children, err }: { k?: string; label: React.ReactNode; full?: boolean; children: React.ReactNode; err?: string }) {
   return (
@@ -36,8 +36,9 @@ function Field({ k, label, full, children, err }: { k?: string; label: React.Rea
 
 /** Checkout from checkout.html: 01 Contact · 02 Delivery · 03 Payment, sticky summary, gold "Place order" */
 /** `paymentText`: payment method names / descriptions in the page language (checkout_options returns English) */
-export function CheckoutForm({ addresses, methods, profile, email, paymentText }: {
-  addresses: Address[]; methods: Method[]; profile: { full_name: string | null; phone: string | null }; email: string | null; paymentText: PaymentText;
+/** `guest`: not signed in — asks for an email for the confirmation, no saved addresses */
+export function CheckoutForm({ addresses, methods, profile, email, guest, paymentText }: {
+  addresses: Address[]; methods: Method[]; profile: { full_name: string | null; phone: string | null }; email: string | null; guest: boolean; paymentText: PaymentText;
 }) {
   const t = useTranslations();
   const districtName = (d: string) => (t.has(`districts.${d.replace(/\s/g, '')}`) ? t(`districts.${d.replace(/\s/g, '')}`) : d);
@@ -55,8 +56,8 @@ export function CheckoutForm({ addresses, methods, profile, email, paymentText }
   const [methodId, setMethodId] = useState(methods[0]?.id ?? '');
   const [payment, setPayment] = useState<'bank_transfer' | 'cod' | ''>('');
   const [options, setOptions] = useState<Options | null>(null);
-  const [f, setF] = useState<Fields>({ full_name: profile.full_name ?? '', phone: profile.phone ?? '', line1: '', line2: '', city: '', district: '', postal_code: '', note: '' });
-  const [save, setSave] = useState(addresses.length === 0);
+  const [f, setF] = useState<Fields>({ email: '', full_name: profile.full_name ?? '', phone: profile.phone ?? '', line1: '', line2: '', city: '', district: '', postal_code: '', note: '' });
+  const [save, setSave] = useState(!guest && addresses.length === 0);
   const [errors, setErrors] = useState<Partial<Record<keyof Fields, string>>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -106,6 +107,7 @@ export function CheckoutForm({ addresses, methods, profile, email, paymentText }
     setError(null);
     const saved = addresses.find((a) => a.id === addressId);
     const errs: typeof errors = {};
+    if (guest && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email.trim())) errs.email = t('checkout.errEmail');
     const name = useSaved ? saved!.full_name : f.full_name;
     const phone = useSaved ? saved!.phone : f.phone;
     if (!name.trim() || name.trim().length < 2) errs.full_name = t('checkout.errName');
@@ -126,7 +128,7 @@ export function CheckoutForm({ addresses, methods, profile, email, paymentText }
         ? { full_name: saved!.full_name, phone: saved!.phone, line1: saved!.line1, line2: saved!.line2 ?? '', city: saved!.city, district: saved!.district, postal_code: saved!.postal_code ?? '' }
         : { full_name: f.full_name, phone: normalisePhone(f.phone), line1: f.line1, line2: f.line2, city: f.city, district: f.district, postal_code: f.postal_code };
     setBusy(true);
-    const res = await placeOrderAction({ checkoutToken: token, address, deliveryMethodId: methodId, paymentMethod: payment, note: f.note, expectedTotal: totals.total, saveAddress: needsAddress && !useSaved && save });
+    const res = await placeOrderAction({ checkoutToken: token, email: guest ? f.email.trim() : undefined, address, deliveryMethodId: methodId, paymentMethod: payment, note: f.note, expectedTotal: totals.total, saveAddress: needsAddress && !useSaved && save });
     if (!res.ok) { setBusy(false); setError(translateDbError(res.error, t)); if (res.priceChanged) refresh(); return; }
     try { sessionStorage.removeItem('fs-checkout-token'); } catch { /* ignore */ }
     await refresh();
@@ -140,10 +142,19 @@ export function CheckoutForm({ addresses, methods, profile, email, paymentText }
           <p className="eyebrow">{t('checkout.eyebrow')}</p>
           <h1 className="co__title"><Title text={t('checkout.title')} /></h1>
           {email ? <p className="co__account">{t.rich('checkout.signedInAs', { email, b: (c) => <b>{c}</b> })}</p> : null}
+          {guest ? <p className="co__account">{t.rich('checkout.guestSignIn', { link: (c) => <Link href="/login?next=/checkout" className="co__link">{c}</Link> })}</p> : null}
         </header>
 
         <section className="co__step" aria-labelledby="stepContact">
           <h2 id="stepContact"><span>01</span> {t('checkout.contact')}</h2>
+          {guest ? (
+            <div className="fields">
+              <Field k="email" label={t('checkout.email')} full err={errors.email}>
+                <input id="f-email" type="email" autoComplete="email" value={f.email} onChange={set('email')} required aria-describedby="f-email-hint" />
+                <small id="f-email-hint" className="ac__small">{t('checkout.emailHint')}</small>
+              </Field>
+            </div>
+          ) : null}
           {useSaved ? (
             <p className="ac__small">{t('checkout.useSaved')}</p>
           ) : (
@@ -199,7 +210,7 @@ export function CheckoutForm({ addresses, methods, profile, email, paymentText }
                   <option value="">{t('checkout.selectDistrict')}</option><DistrictOptions />
                 </select>
               </Field>
-              <div className="field field--full"><label className="co__save"><input type="checkbox" checked={save} onChange={(e) => setSave(e.target.checked)} /> {t('checkout.saveToAccount')}</label></div>
+              {guest ? null : <div className="field field--full"><label className="co__save"><input type="checkbox" checked={save} onChange={(e) => setSave(e.target.checked)} /> {t('checkout.saveToAccount')}</label></div>}
             </div>
           ) : null}
 

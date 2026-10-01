@@ -42,7 +42,7 @@ select pg_temp.expect_error($$select add_to_cart('00000000-0000-4000-d000-000000
 select pg_temp.expect_error($$select add_to_cart('00000000-0000-4000-d000-000000000062', null, 1)$$, 'out of stock');
 select (get_cart())->'subtotal' as guest_subtotal, (get_cart())->'count' as cnt;
 select create_cart_transfer_token() as tok \gset
-select pg_temp.expect_error($$select place_order('tok-guest-123', '{}', null, 'cod')$$, 'log in');
+select pg_temp.expect_error($$select place_order('tok-guest-123', '{}', null, 'cod')$$, 'valid email');
 reset role;
 
 \echo '--- customer merges guest cart'
@@ -224,3 +224,23 @@ select status, payment_status, is_overdue from orders where id = :'o9';
 select state, count(*) from cart_items where user_id = '55555555-5555-4555-8555-555555555555' group by state;
 select template from email_outbox where order_id = :'o9' order by id;
 \echo DONE2
+\echo '--- guest checkout'
+insert into auth.users (id, email, is_anonymous) values ('66666666-6666-4666-8666-666666666666', null, true);
+insert into auth.users (id, email) values ('77777777-7777-4777-8777-777777777777', 'later@example.com');
+select pg_temp.as_user('66666666-6666-4666-8666-666666666666');
+set role authenticated;
+select add_to_cart('00000000-0000-4000-d000-000000000051', null, 1);
+select pg_temp.expect_error(format($$select place_order('tok-gst-0001', '{"full_name":"Guest Buyer","phone":"0773334444","line1":"2 Rd","city":"Galle","district":"Galle"}', %L, 'bank_transfer')$$, :'std'), 'valid email');
+select pg_temp.expect_error(format($$select place_order('tok-gst-0001', '{"full_name":"Guest Buyer","phone":"0773334444","line1":"2 Rd","city":"Galle","district":"Galle"}', %L, 'bank_transfer', null, null, 'nope')$$, :'std'), 'valid email');
+select place_order('tok-gst-0001', '{"full_name":"Guest Buyer","phone":"0773334444","line1":"2 Rd","city":"Galle","district":"Galle"}', :'std', 'bank_transfer', null, null, ' Guest@Example.com ') ->> 'order_number' as gnum \gset
+select order_number, guest_email from orders where order_number = :'gnum';
+select create_cart_transfer_token() as gtok \gset
+reset role;
+select to_email from email_outbox e join orders o on o.id = e.order_id where o.order_number = :'gnum';
+select pg_temp.as_user('77777777-7777-4777-8777-777777777777');
+set role authenticated;
+select merge_guest_cart(:'gtok');
+select order_number from orders where order_number = :'gnum';
+reset role;
+select count(*) as guest_orders_left from orders where user_id = '66666666-6666-4666-8666-666666666666';
+\echo DONE3

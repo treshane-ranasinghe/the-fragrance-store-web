@@ -12,7 +12,7 @@ const under = (path: string, prefixes: string[]) => prefixes.some((p) => path ==
 
 /**
  * Storefront: picks the language from the URL (/si/… = Sinhala), then checks the login cookie on
- * /account, /checkout and /order. /admin (admin role required) and /auth are English-only and skip the language step.
+ * /account, /checkout and /order (/checkout is also open to guests). /admin (admin role required) and /auth are English-only and skip the language step.
  * Database security rules still apply underneath.
  */
 export async function middleware(request: NextRequest) {
@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   if (DEMO_MODE) return under(path, ['/account', '/order']) ? toLogin() : res;
 
   const { user } = await refreshSessionOnto(request, res);
-  if (under(path, ['/account', '/checkout']) && (!user || user.is_anonymous)) return toLogin();
+  if (under(path, ['/account']) && (!user || user.is_anonymous)) return toLogin();
   res.headers.set('X-Robots-Tag', 'noindex');
   return res;
 }

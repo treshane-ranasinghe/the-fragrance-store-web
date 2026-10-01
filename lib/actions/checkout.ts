@@ -8,6 +8,8 @@ import { processEmailQueue } from '@/lib/email/process';
 
 const placeSchema = (t: (key: string) => string) => z.object({
   checkoutToken: z.string().min(8),
+  // Guests only (the database requires it for guest orders)
+  email: z.string().trim().email(t('email')).optional(),
   address: z.object({
     full_name: z.string().trim().min(2, t('recipient')),
     phone: z.string().transform(normalisePhone).refine((p) => LK_PHONE.test(p), t('phone')),
@@ -40,6 +42,8 @@ export async function placeOrderAction(input: z.input<ReturnType<typeof placeSch
     p_payment_method: d.paymentMethod,
     p_note: d.note || null,
     p_expected_total: d.expectedTotal,
+    // Only sent for guests, so signed-in checkout keeps working before the guest-checkout migration is applied
+    ...(d.email ? { p_email: d.email } : {}),
   });
   if (error) {
     const priceChanged = error.message.startsWith('PRICE_CHANGED');

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CheckoutForm } from '@/components/store/CheckoutForm';
-import { redirect } from '@/i18n/navigation';
 import { pageLocale } from '@/i18n/server';
 import { DEMO_MODE } from '@/lib/config';
 import { getSettings } from '@/lib/data';
@@ -24,16 +23,17 @@ export default async function CheckoutPage({ params }: Props) {
     cod: { title: settings.cod_title, description: settings.cod_description },
   };
   if (DEMO_MODE) {
-    return <CheckoutForm addresses={[]} methods={deliveryMethods} profile={{ full_name: '', phone: '' }} email={null} paymentText={paymentText} />;
+    return <CheckoutForm addresses={[]} methods={deliveryMethods} profile={{ full_name: '', phone: '' }} email={null} guest paymentText={paymentText} />;
   }
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user || user.is_anonymous) return redirect({ href: '/login?next=/checkout', locale });
+  // Guests (no login, or the guest session the bag lives in) check out with their email; no saved addresses
+  const guest = !user || Boolean(user.is_anonymous);
   const [profile, addresses, methods] = await Promise.all([
-    supabase.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle(),
-    supabase.from('addresses').select('*').eq('user_id', user.id).order('is_default', { ascending: false }).order('created_at'),
+    user ? supabase.from('profiles').select('full_name, phone').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null }),
+    user && !guest ? supabase.from('addresses').select('*').eq('user_id', user.id).order('is_default', { ascending: false }).order('created_at') : Promise.resolve({ data: [] }),
     supabase.from('delivery_methods').select('id, name, description, fee, free_over, cod_allowed, requires_address, i18n').eq('is_active', true).order('sort_order'),
   ]);
   return <CheckoutForm addresses={addresses.data ?? []} methods={localizeRows(methods.data ?? [], locale)} profile={profile.data ?? { full_name: null, phone: null }}
-    email={user.email ?? null} paymentText={paymentText} />;
+    email={guest ? null : user?.email ?? null} guest={guest} paymentText={paymentText} />;
 }

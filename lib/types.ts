@@ -172,6 +172,7 @@ export interface Order {
   id: string;
   order_number: string;
   user_id: string | null;
+  guest_email: string | null;
   status: OrderStatus;
   payment_method: PaymentMethod;
   payment_status: PaymentStatus;
