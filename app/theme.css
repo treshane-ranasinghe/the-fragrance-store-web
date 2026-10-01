@@ -1,0 +1,74 @@
+/* Maps next/font's self-hosted families onto the variables used by styles.css / shop.css */
+:root {
+  --serif:  var(--font-cormorant), "Cormorant Garamond", var(--font-si-serif), "Times New Roman", serif;
+  --sans:   var(--font-jost), "Jost", var(--font-si-sans), system-ui, -apple-system, sans-serif;
+  --logo:   var(--font-nunito), "Nunito", "Jost", var(--font-si-sans), sans-serif;
+  --poster: var(--font-antonio), "Antonio", "Oswald", var(--font-si-sans), Impact, sans-serif;
+}
+
+/* Intro already played this session: never flash it (Effects removes it on mount) */
+.tfs-seen .preloader { display: none; }
+
+/* Warm Beige band (testimonials): Gold Dark is 3.6:1 there, so its small labels use Deep Forest */
+.testimonials .eyebrow, .testimonials .quote figcaption { color: #12352B; }
+.testimonials .quotes__dots button[aria-selected="true"] { background: #12352B; }
+
+/* ---------- Premium depth: emerald glows, gold hairlines, richer surfaces ---------- */
+body { background: var(--onyx); }
+.section--dark {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 0%, rgba(34, 98, 74, .28), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(198, 165, 102, .07), transparent 70%),
+    var(--onyx);
+}
+.section:not(.section--dark):not(.testimonials) {
+  background:
+    radial-gradient(ellipse 60% 50% at 85% 0%, rgba(198, 165, 102, .14), transparent 70%),
+    var(--ivory);
+}
+/* gold hairline between stacked dark sections */
+.section--dark + .section--dark, .marquee + .section--dark, .section--dark + .gallery { box-shadow: inset 0 1px 0 rgba(198, 165, 102, .16); }
+
+.product {
+  background: linear-gradient(180deg, #17402F 0%, #12352B 55%, #0F3026 100%);
+  border-color: rgba(198, 165, 102, .16);
+  box-shadow: inset 0 1px 0 rgba(232, 213, 168, .06);
+}
+.product:hover { border-color: rgba(198, 165, 102, .42); box-shadow: 0 30px 60px -30px rgba(0,0,0,.7), 0 0 0 1px rgba(198,165,102,.25), 0 0 40px -10px rgba(198,165,102,.18); }
+.product__tag { background: rgba(11, 40, 31, .82); border-color: rgba(198,165,102,.4); }
+
+.btn--gold { box-shadow: inset 0 1px 0 rgba(255, 250, 235, .45), inset 0 -1px 0 rgba(107, 82, 38, .35); }
+.btn--gold:hover { box-shadow: inset 0 1px 0 rgba(255,250,235,.5), 0 16px 44px -12px rgba(198,165,102,.55); }
+.btn--ghost { border-color: rgba(198, 165, 102, .38); }
+
+.nav .nav__inner { border-color: rgba(232, 213, 168, .16); }
+.nav.is-scrolled .nav__inner {
+  background: linear-gradient(120deg, rgba(18,53,43,.78), rgba(11,40,31,.72) 50%, rgba(60,52,28,.5));
+  border-color: rgba(198,165,102,.3);
+}
+
+.marquee { background: linear-gradient(90deg, #0F3026, #12352B 50%, #0F3026); border-color: rgba(198,165,102,.28); }
+.marquee b { color: var(--gold-light); }
+
+.footer {
+  background:
+    radial-gradient(ellipse 60% 60% at 50% 0%, rgba(198,165,102,.10), transparent 70%),
+    linear-gradient(180deg, #12352B, #0B281F);
+  border-top: 0;
+  box-shadow: inset 0 1px 0 rgba(198,165,102,.35);
+}
+
+.bag__panel, .modal__panel, .co__summary-inner, .ac__card, .ac__order, .co__recap {
+  background: linear-gradient(180deg, #143A2F, #11332A);
+  box-shadow: inset 0 1px 0 rgba(232,213,168,.07);
+}
+.co-head { background: linear-gradient(180deg, #12352B, #0F3026); }
+.promo__card { border-color: rgba(198,165,102,.35); }
+.story__badge { background: linear-gradient(160deg, #12352B, #0B281F); border-color: rgba(198,165,102,.45); }
+.pyramid__roman { -webkit-text-stroke-color: var(--gold-light); }
+
+/* gold selection + scrollbar */
+::selection { background: var(--gold); color: #0B281F; }
+@media (hover: hover) {
+  html { scrollbar-color: #7D6435 #0B281F; }
+}
